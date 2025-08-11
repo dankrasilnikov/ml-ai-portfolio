@@ -1,6 +1,6 @@
 services:
   agentic:
-    build: .
+    build: ./apps/agentic
     container_name: agentic
     environment:
       DATABASE_URL: "sqlite:////app/apps/agentic/data/agentic.db"

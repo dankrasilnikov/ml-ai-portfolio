@@ -1,15 +1,16 @@
 services:
   agentic:
-    build: ./apps/agentic
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.apps
     container_name: agentic
     environment:
       DATABASE_URL: "sqlite:////app/apps/agentic/data/agentic.db"
     command: uvicorn apps.agentic.app.main:app --host 0.0.0.0 --port 8000 --reload
     volumes:
-      - .:/app
+      - ..:/app
       - agentic_db:/app/apps/agentic/data
-    ports:
-      - "8000:8000"
+    ports: ["8000:8000"]
 
 volumes:
   agentic_db:

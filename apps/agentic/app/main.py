@@ -1,12 +1,12 @@
 from time import perf_counter
 
-from common.logging import log
-from common.metrics_config import REQS, LAT
+from apps.agentic.common.logging import log
+from metrics_config import REQS, LAT
 from fastapi import FastAPI
 from pydantic import BaseModel
-from api.tasks_router import tasks_router
-from api.metrics_router import metrics_router
-from api.chat_router import chat_router
+from apps.agentic.api.tasks_router import tasks_router
+from apps.agentic.api.metrics_router import metrics_router
+from apps.agentic.api.chat_router import chat_router
 
 app = FastAPI(title="agentic-core")
 

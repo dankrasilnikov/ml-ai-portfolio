@@ -2,11 +2,12 @@ import uuid
 from pathlib import Path
 from time import perf_counter
 
-from app.db import get_db, Task
-from common.metrics_config import REQS, LAT
+from apps.agentic.app.db import get_db, Task
+from apps.agentic.app.metrics_config import REQS, LAT
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+from apps.agentic.agent.graph import run_pipeline
 
 tasks_router = APIRouter(prefix="/tasks", tags=["tasks"])
 
@@ -29,8 +30,18 @@ def create_lead_task(payload: LeadIn, db: Session = Depends(get_db)):
 
     task = Task(id=tid, status="queued", trace_path=trace_path)
 
-    db.add(task)
-    db.commit()
+    db.add(task); db.commit()
+
+    try:
+        _ = run_pipeline(task_id=tid, trace_path=trace_path, payload=payload.model_dict())
+        task.status = "done"
+        task.last_error = None
+    except Exception as e:
+        task.status = "error"
+        task.last_error = repr(e)
+    finally:
+        db.add(task); db.commit()
+
     try:
         return {"task_id": tid, "status": task.status}
     finally:

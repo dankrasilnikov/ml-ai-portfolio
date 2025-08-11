@@ -1,7 +1,7 @@
 from time import perf_counter
 
-from common.logging import log
-from common.metrics_config import REQS, LAT
+from apps.agentic.common.logging import log
+from apps.agentic.app.metrics_config import REQS, LAT
 from fastapi import APIRouter
 from pydantic import BaseModel
 

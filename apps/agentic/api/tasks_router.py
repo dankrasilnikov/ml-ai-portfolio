@@ -2,21 +2,22 @@ import uuid
 from pathlib import Path
 from time import perf_counter
 
-from apps.agentic.app.db import get_db, Task
-from apps.agentic.app.metrics_config import REQS, LAT
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+from typing import Optional
 from apps.agentic.agent.graph import run_pipeline
+from apps.agentic.app.db import get_db, Task
+from apps.agentic.app.metrics_config import REQS, LAT
 
 tasks_router = APIRouter(prefix="/tasks", tags=["tasks"])
 
 
 class LeadIn(BaseModel):
     company: str
-    website: str
     question: str
-    contact: str
+    website: Optional[str] = None
+    contact: Optional[str] = None
 
 
 @tasks_router.post("/lead")
@@ -24,23 +25,27 @@ def create_lead_task(payload: LeadIn, db: Session = Depends(get_db)):
     t0 = perf_counter()
     tid = f"t_{uuid.uuid4().hex[:8]}"
 
-    traces_dir = Path(__file__).resolve().parents[2] / "data" / "traces"
+    traces_dir = Path(__file__).resolve().parents[1] / "data" / "traces"
     traces_dir.mkdir(parents=True, exist_ok=True)
     trace_path = (traces_dir / f"{tid}.jsonl").as_posix()
 
     task = Task(id=tid, status="queued", trace_path=trace_path)
 
-    db.add(task); db.commit()
+    db.add(task)
+    db.commit()
 
     try:
-        _ = run_pipeline(task_id=tid, trace_path=trace_path, payload=payload.model_dict())
+        data = payload.model_dump()
+        _ = run_pipeline(task_id=tid, trace_path=trace_path, payload=data)
+
         task.status = "done"
         task.last_error = None
     except Exception as e:
         task.status = "error"
         task.last_error = repr(e)
     finally:
-        db.add(task); db.commit()
+        db.add(task)
+        db.commit()
 
     try:
         return {"task_id": tid, "status": task.status}

@@ -1,7 +1,8 @@
 from time import perf_counter
 
 from apps.agentic.common.logging import log
-from metrics_config import REQS, LAT
+from .db import init_db
+from apps.agentic.app.metrics_config import REQS, LAT
 from fastapi import FastAPI
 from pydantic import BaseModel
 from apps.agentic.api.tasks_router import tasks_router
@@ -9,6 +10,12 @@ from apps.agentic.api.metrics_router import metrics_router
 from apps.agentic.api.chat_router import chat_router
 
 app = FastAPI(title="agentic-core")
+
+
+@app.on_event("startup")
+def _startup():
+    init_db()
+    log(f"[DB] init OK")
 
 API_VERSION_PREFIX = "/api/v1"
 

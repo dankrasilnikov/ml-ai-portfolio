@@ -4,3 +4,4 @@ sqlalchemy
 prometheus-client
 python-dotenv
 pydantic
+langgraph

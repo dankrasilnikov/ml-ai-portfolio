@@ -1,23 +1,33 @@
+from time import perf_counter
+
+from common.logging import log
+from common.metrics_config import REQS, LAT
 from fastapi import FastAPI
 from pydantic import BaseModel
-from common.logging import log
-import os
+from api.tasks_router import tasks_router
+from api.metrics_router import metrics_router
+from api.chat_router import chat_router
 
 app = FastAPI(title="agentic-core")
+
+API_VERSION_PREFIX = "/api/v1"
+
+app.include_router(tasks_router, prefix=API_VERSION_PREFIX)
+app.include_router(metrics_router, prefix=API_VERSION_PREFIX)
+app.include_router(chat_router, prefix=API_VERSION_PREFIX)
 
 class ChatIn(BaseModel):
     user_id: str
     message: str
 
+
 @app.get("/health")
 def health():
-    return {"ok": True}
+    t0 = perf_counter()
+    try:
+        return {"ok": True}
+    finally:
+        REQS.labels("/health").inc()
+        LAT.labels("/health").observe(perf_counter() - t0)
 
-@app.post("/chat")
-def chat(inp: ChatIn):
-    log("chat_in", user_id=inp.user_id, msg=inp.message)
-    return {
-        "user_id": inp.user_id,
-        "reply": f"(stub) I heard: {inp.message}",
-        "trace_id": "stub_001"
-    }
+
